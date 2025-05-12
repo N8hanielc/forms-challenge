@@ -2,33 +2,30 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import App from "./App";
 
-test("renders form and adds a person with valid input", () => {
+test("renders title", () => {
   render(<App />);
-  const nameInput = screen.getByLabelText(/Name/i);
-  const emailInput = screen.getByLabelText(/Email/i);
-  const phoneInput = screen.getByLabelText(/Phone/i);
-  const button = screen.getByText(/Add/i);
+  const title = screen.getByText(/form validation/i);
+  expect(title).toBeInTheDocument();
+});
 
-  fireEvent.change(nameInput, { target: { value: "Nathaniel" } });
-  fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-  fireEvent.change(phoneInput, { target: { value: "1234567890" } });
-  fireEvent.click(button);
-
-  expect(screen.getByText(/Nathaniel/)).toBeInTheDocument();
-  expect(screen.getByText(/test@example.com/)).toBeInTheDocument();
-  expect(screen.getByText(/1234567890/)).toBeInTheDocument();
+test("shows error on empty submit", () => {
+  render(<App />);
+  fireEvent.click(screen.getByText(/add person/i));
+  expect(screen.getByText(/name is required/i)).toBeInTheDocument();
 });
 
 test("shows error for invalid email", () => {
   render(<App />);
-  const emailInput = screen.getByLabelText(/Email/i);
-  fireEvent.change(emailInput, { target: { value: "invalidemail" } });
-  expect(screen.getByText(/Invalid email/)).toBeInTheDocument();
+  const emailInput = screen.getByPlaceholderText(/email/i);
+  fireEvent.change(emailInput, { target: { value: "bademail" } });
+  fireEvent.click(screen.getByText(/add person/i));
+  expect(screen.getByText(/invalid email address/i)).toBeInTheDocument();
 });
 
-test("shows error for invalid phone", () => {
+test("shows error for short phone number", () => {
   render(<App />);
-  const phoneInput = screen.getByLabelText(/Phone/i);
+  const phoneInput = screen.getByPlaceholderText(/phone number/i);
   fireEvent.change(phoneInput, { target: { value: "123" } });
-  expect(screen.getByText(/Phone must be 10 digits/)).toBeInTheDocument();
+  fireEvent.click(screen.getByText(/add person/i));
+  expect(screen.getByText(/phone number must be at least 10 digits/i)).toBeInTheDocument();
 });

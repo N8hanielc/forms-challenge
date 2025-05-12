@@ -3,75 +3,66 @@ import React, { useState, useEffect } from "react";
 import "./App.css";
 
 function App() {
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
-  const [formErrors, setFormErrors] = useState({});
+  const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [people, setPeople] = useState([]);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/people")
+    fetch("http://localhost:3001/people")
       .then(res => res.json())
-      .then(data => setPeople(data))
-      .catch(err => console.error("Error fetching data:", err));
+      .then(data => setPeople(data));
   }, []);
 
-  const validate = (field, value) => {
-    let error = "";
-    if (field === "name" && !value.trim()) error = "Name is required";
-    if (field === "email" && !/\S+@\S+\.\S+/.test(value)) error = "Invalid email";
-    if (field === "phone" && !/^\d{10}$/.test(value)) error = "Phone must be 10 digits";
-    return error;
+  const validateField = (name, value) => {
+    if (name === "email" && !value.includes("@")) return "Invalid email address.";
+    if (name === "phone" && value.length < 10) return "Phone number must be at least 10 digits.";
+    if (name === "name" && value.trim() === "") return "Name is required.";
+    return "";
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    setFormErrors({ ...formErrors, [name]: validate(name, value) });
+    setForm(prev => ({ ...prev, [name]: value }));
+    const errorMsg = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: errorMsg }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const errors = {
-      name: validate("name", formData.name),
-      email: validate("email", formData.email),
-      phone: validate("phone", formData.phone),
-    };
-    setFormErrors(errors);
-    if (!Object.values(errors).some(Boolean)) {
-      fetch("http://localhost:5000/api/people", {
+    const newErrors = Object.keys(form).reduce((acc, key) => {
+      const err = validateField(key, form[key]);
+      if (err) acc[key] = err;
+      return acc;
+    }, {});
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length === 0) {
+      const res = await fetch("http://localhost:3001/people", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setPeople([...people, data]);
-          setFormData({ name: "", email: "", phone: "" });
-        })
-        .catch((err) => console.error("Error posting data:", err));
+        body: JSON.stringify(form)
+      });
+      const saved = await res.json();
+      setPeople([...people, saved]);
+      setForm({ name: "", email: "", phone: "" });
     }
   };
 
   return (
     <div className="App">
-      <form onSubmit={handleSubmit} className="form-container">
-        <label>Name</label>
-        <input name="name" value={formData.name} onChange={handleChange} />
-        {formErrors.name && <span className="error">{formErrors.name}</span>}
-
-        <label>Email</label>
-        <input name="email" value={formData.email} onChange={handleChange} />
-        {formErrors.email && <span className="error">{formErrors.email}</span>}
-
-        <label>Phone</label>
-        <input name="phone" value={formData.phone} onChange={handleChange} />
-        {formErrors.phone && <span className="error">{formErrors.phone}</span>}
-
-        <button type="submit">Add</button>
+      <h1>Form Validation</h1>
+      <form onSubmit={handleSubmit} className="form">
+        <input name="name" placeholder="Name" value={form.name} onChange={handleChange} />
+        {errors.name && <p className="error">{errors.name}</p>}
+        <input name="email" placeholder="Email" value={form.email} onChange={handleChange} />
+        {errors.email && <p className="error">{errors.email}</p>}
+        <input name="phone" placeholder="Phone Number" value={form.phone} onChange={handleChange} />
+        {errors.phone && <p className="error">{errors.phone}</p>}
+        <button type="submit">Add Person</button>
       </form>
-
       <ul>
-        {people.map((person, index) => (
-          <li key={index}>{person.name} ({person.email}, {person.phone})</li>
+        {people.map((p, i) => (
+          <li key={i}>{p.name} - {p.email} - {p.phone}</li>
         ))}
       </ul>
     </div>

@@ -1,12 +1,14 @@
-
 {
-  "name": "react-form-backend",
+  "name": "form-backend",
   "version": "1.0.0",
-  "main": "server.js",
-  "license": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.3.4",
     "cors": "^2.8.5",
-    "express": "^4.17.1",
-    "mongoose": "^5.12.3"
+    "body-parser": "^1.20.2"
   }
 }
